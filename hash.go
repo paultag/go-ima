@@ -23,15 +23,21 @@ import (
 // directly - talking directly about crypto.Hash numbers is much safer. This
 // part of the IMA library is useful to convert between IMA Hash IDs and the
 // standard Go crypto Hash objects.
+//
+// These objects are only exported in the event that someone needs a very
+// precise understanding of the mapping between IMA hashes and the native
+// Go hashes.
 type Hash struct {
 	Id   uint8
 	Hash crypto.Hash
 }
 
-// List of viable IMA Hash functions
+// List of IMA Hash functions.
 type Hashes []Hash
 
-// Convert a crypto.Hash to an ima.Hash
+// Convert a crypto.Hash to an ima.Hash. This will enumerate the Hash
+// functions in the Hashes, and find an IMA Hash object that corresponds
+// to the native Go Hash function.
 func (h Hashes) GoToIMA(hash crypto.Hash) (*Hash, error) {
 	for _, imaHash := range h {
 		if imaHash.Hash == hash {
@@ -41,7 +47,9 @@ func (h Hashes) GoToIMA(hash crypto.Hash) (*Hash, error) {
 	return nil, fmt.Errorf("ima: no matching crypto.Hash found")
 }
 
-// Convert an ima.Hash to a crypto.Hash
+// Convert a ima.Hash to a crypto.Hash. This will enumerate the Hsah
+// functions in the Hashes, and find a crypto.hash that corresponds
+// to the IMA hash ID.
 func (h Hashes) IMAToGo(hash uint8) (*crypto.Hash, error) {
 	for _, imaHash := range h {
 		if imaHash.Id == hash {
@@ -52,14 +60,16 @@ func (h Hashes) IMAToGo(hash uint8) (*crypto.Hash, error) {
 }
 
 var (
-	MD4       Hash = Hash{Id: 0, Hash: crypto.MD4}
-	MD5       Hash = Hash{Id: 1, Hash: crypto.MD5}
-	SHA1      Hash = Hash{Id: 2, Hash: crypto.SHA1}
+	MD4 Hash = Hash{Id: 0, Hash: crypto.MD4}
+	MD5 Hash = Hash{Id: 1, Hash: crypto.MD5}
+
 	RIPEMD160 Hash = Hash{Id: 3, Hash: crypto.RIPEMD160}
-	SHA256    Hash = Hash{Id: 4, Hash: crypto.SHA256}
-	SHA384    Hash = Hash{Id: 5, Hash: crypto.SHA384}
-	SHA512    Hash = Hash{Id: 6, Hash: crypto.SHA512}
-	SHA224    Hash = Hash{Id: 7, Hash: crypto.SHA224}
+
+	SHA1   Hash = Hash{Id: 2, Hash: crypto.SHA1}
+	SHA224 Hash = Hash{Id: 7, Hash: crypto.SHA224}
+	SHA256 Hash = Hash{Id: 4, Hash: crypto.SHA256}
+	SHA384 Hash = Hash{Id: 5, Hash: crypto.SHA384}
+	SHA512 Hash = Hash{Id: 6, Hash: crypto.SHA512}
 
 	// List of all Hash functions.
 	HashFunctions = Hashes{

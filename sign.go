@@ -52,7 +52,8 @@ func PublicKeyId(pubKey crypto.PublicKey) ([]byte, error) {
 	return hashSum[16:20], nil
 }
 
-// IMA Signature
+// IMA Signature encapsulation. This contains both the IMA Signature Header
+// directly, as well as the Signature, in bytes.
 type Signature struct {
 	Header    SignatureHeader
 	Signature []byte
@@ -62,18 +63,49 @@ type Signature struct {
 // an IMA header from a binary stream, and provide enough context to read the
 // reamining amount of data, or understand which key to find.
 type SignatureHeader struct {
-	Magic           uint8
-	Version         uint8
-	HashAlgorithm   uint8
-	KeyID           [4]byte
+
+	// Always 0x03.
+	Magic uint8
+
+	// Either format 0x01, or format 0x02. This library only supports IMA
+	// Version 0x02.
+	Version uint8
+
+	// IMA Hash Algorithm used. This is an awkwardly sorted enum of a mix
+	// of total shit algorithms and moderately tolerable ones. The Hash type
+	// in this library can be used to convert this to a sensible format, as
+	// well as the Hash() helper.
+	HashAlgorithm uint8
+
+	// Last 4 bytes of a SHA1 hash of the ASN.1 DER encoded RSA Public Key.
+	// This is mostly useful to act as a bloom-filter for candidate keys to
+	// check the Signature against.
+	KeyID [4]byte
+
+	// Completely useless field. Please do not use this. This is used
+	// in the underlying byte serialization to let consumers know
+	// the length of the Signature data.
+	//
+	// Users of this library can be happy to go about their buisness by running
+	// len(Signature) instead. When the Signature is serialized, this field
+	// will be set to exactly that, overriding whatever the current value
+	// is.
 	SignatureLength uint16
 }
 
+// Get the native Go crypto.Hash used to compute the Hash that that signature
+// is over. This can be used to hash data to generate the data to verify
+// the signature against.
 func (h SignatureHeader) Hash() (*crypto.Hash, error) {
 	return HashFunctions.IMAToGo(h.HashAlgorithm)
 }
 
+// Take a Signature, and convert it to a byte array. This can be used
+// to write out IMA signatures.
 func Serialize(signature Signature) ([]byte, error) {
+	if signature.Header.Version != 0x02 {
+		return nil, fmt.Errorf("ima: version 2 signatures are supported, only")
+	}
 	if signature.Signature == nil {
 		return nil, fmt.Errorf("ima: refusing to serialize without a signature")
 	}
@@ -84,10 +116,12 @@ func Serialize(signature Signature) ([]byte, error) {
 	buf := []byte{}
 	out := bytes.NewBuffer(buf)
 
+	// Dump the header to the buffer
 	if err := binary.Write(out, binary.BigEndian, signature.Header); err != nil {
 		return nil, err
 	}
 
+	// Dump the Signature to the buffer
 	if err := binary.Write(out, binary.BigEndian, signature.Signature); err != nil {
 		return nil, err
 	}
@@ -95,6 +129,8 @@ func Serialize(signature Signature) ([]byte, error) {
 	return out.Bytes(), nil
 }
 
+// Take a byte array and return a new Signature object, containing the parsed
+// headers and Signature. This can be used to verify IMA signatures.
 func Parse(signature []byte) (*Signature, error) {
 	data := bytes.NewReader(signature)
 	line := SignatureHeader{}

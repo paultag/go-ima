@@ -27,5 +27,6 @@ func TestSign(t *testing.T) {
 
 	assert(t, len(sig.Signature) == 128)
 
+	isok(t, sig.Verify(key.PublicKey, digest, crypto.SHA256))
 	isok(t, rsa.VerifyPKCS1v15(&key.PublicKey, crypto.SHA256, digest, sig.Signature))
 }

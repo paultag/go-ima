@@ -6,7 +6,7 @@ import (
 )
 
 func Sign(signer crypto.Signer, rand io.Reader, digest []byte, opts crypto.SignerOpts) ([]byte, error) {
-	imaHash, err := HashFunctions.GoToIMA(opts.HashFunc())
+	imaHash, err := HashFunctions.ToHash(opts.HashFunc())
 	if err != nil {
 		return nil, err
 	}

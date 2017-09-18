@@ -19,26 +19,26 @@ import (
 	"fmt"
 )
 
-// Encapsulation of an IMA Hash function. These should likely not be used
+// Encapsulation of an IMA EVM Hash function. These should likely not be used
 // directly - talking directly about crypto.Hash numbers is much safer. This
-// part of the IMA library is useful to convert between IMA Hash IDs and the
+// part of the IMA EVM library is useful to convert between IMA EVM Hash IDs and the
 // standard Go crypto Hash objects.
 //
 // These objects are only exported in the event that someone needs a very
-// precise understanding of the mapping between IMA hashes and the native
+// precise understanding of the mapping between IMA EVM hashes and the native
 // Go hashes.
 type Hash struct {
 	Id   uint8
 	Hash crypto.Hash
 }
 
-// List of IMA Hash functions.
+// List of IMA EVM Hash functions.
 type Hashes []Hash
 
 // Convert a crypto.Hash to an ima.Hash. This will enumerate the Hash
-// functions in the Hashes, and find an IMA Hash object that corresponds
+// functions in the Hashes, and find an IMA EVM Hash object that corresponds
 // to the native Go Hash function.
-func (h Hashes) GoToIMA(hash crypto.Hash) (*Hash, error) {
+func (h Hashes) ToHash(hash crypto.Hash) (*Hash, error) {
 	for _, imaHash := range h {
 		if imaHash.Hash == hash {
 			return &imaHash, nil
@@ -49,14 +49,14 @@ func (h Hashes) GoToIMA(hash crypto.Hash) (*Hash, error) {
 
 // Convert a ima.Hash to a crypto.Hash. This will enumerate the Hsah
 // functions in the Hashes, and find a crypto.hash that corresponds
-// to the IMA hash ID.
-func (h Hashes) IMAToGo(hash uint8) (*crypto.Hash, error) {
+// to the IMA EVM hash ID.
+func (h Hashes) ToCrypto(hash uint8) (*crypto.Hash, error) {
 	for _, imaHash := range h {
 		if imaHash.Id == hash {
 			return &imaHash.Hash, nil
 		}
 	}
-	return nil, fmt.Errorf("ima: no matching IMA hash found")
+	return nil, fmt.Errorf("ima: no matching IMA EVM hash found")
 }
 
 var (

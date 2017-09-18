@@ -97,11 +97,11 @@ type SignatureHeader struct {
 // is over. This can be used to hash data to generate the data to verify
 // the signature against.
 func (h SignatureHeader) Hash() (*crypto.Hash, error) {
-	return HashFunctions.IMAToGo(h.HashAlgorithm)
+	return HashFunctions.ToCrypto(h.HashAlgorithm)
 }
 
 // Take a Signature, and convert it to a byte array. This can be used
-// to write out IMA signatures.
+// to write out IMA EVM signatures.
 func Serialize(signature Signature) ([]byte, error) {
 	if signature.Header.Version != 0x02 {
 		return nil, fmt.Errorf("ima: version 2 signatures are supported, only")

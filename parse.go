@@ -34,6 +34,9 @@ import (
 func PublicKeyId(pubKey crypto.PublicKey) ([4]byte, error) {
 	derKey := []byte{}
 	switch pubKey.(type) {
+	case rsa.PublicKey:
+		pubKey := pubKey.(rsa.PublicKey)
+		return PublicKeyId(&pubKey)
 	case *rsa.PublicKey:
 		var err error
 		rsaPublicKey := pubKey.(*rsa.PublicKey)

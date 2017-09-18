@@ -22,6 +22,9 @@ import (
 	"crypto/rsa"
 )
 
+// Given a crypto.Signer, a RNG source (to be used during the underlying
+// signer.Sign call), a digest, and a crypto.SignerOpts, sign the digest
+// and serialize the Signature as an IMA EVM v2.0 signature.
 func Sign(signer crypto.Signer, rand io.Reader, digest []byte, opts crypto.SignerOpts) ([]byte, error) {
 	imaHash, err := HashFunctions.ToHash(opts.HashFunc())
 	if err != nil {
@@ -51,6 +54,7 @@ func Sign(signer crypto.Signer, rand io.Reader, digest []byte, opts crypto.Signe
 	return Serialize(ret)
 }
 
+// Verify an IMA EVM Signature against a crypto.PublicKey.
 func (s Signature) Verify(pub crypto.PublicKey, digest []byte, hash crypto.Hash) error {
 	switch pub.(type) {
 	case rsa.PublicKey:

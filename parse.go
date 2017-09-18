@@ -31,7 +31,7 @@ import (
 // on a hash the public key. In particular, it's the last 4 bytes of a SHA1
 // hash of the DER encoded RSA Public Key. Other formates are not supported
 // at this time.
-func PublicKeyId(pubKey crypto.PublicKey) ([]byte, error) {
+func PublicKeyId(pubKey crypto.PublicKey) ([4]byte, error) {
 	derKey := []byte{}
 	switch pubKey.(type) {
 	case *rsa.PublicKey:
@@ -39,17 +39,17 @@ func PublicKeyId(pubKey crypto.PublicKey) ([]byte, error) {
 		rsaPublicKey := pubKey.(*rsa.PublicKey)
 		derKey, err = asn1.Marshal(*rsaPublicKey)
 		if err != nil {
-			return nil, err
+			return [4]byte{}, err
 		}
 	default:
-		return nil, fmt.Errorf("ima: public key format not supported")
+		return [4]byte{}, fmt.Errorf("ima: public key format not supported")
 	}
 
 	hash := sha1.New()
 	hash.Write(derKey)
 	hashSum := hash.Sum(nil)
 
-	return hashSum[16:20], nil
+	return [4]byte{hashSum[16], hashSum[17], hashSum[18], hashSum[19]}, nil
 }
 
 // IMA Signature encapsulation. This contains both the IMA Signature Header

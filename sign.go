@@ -54,8 +54,32 @@ func Sign(signer crypto.Signer, rand io.Reader, digest []byte, opts crypto.Signe
 	return Serialize(ret)
 }
 
-// Verify an IMA EVM Signature against a crypto.PublicKey.
-func (s Signature) Verify(pub crypto.PublicKey, digest []byte, hash crypto.Hash) error {
+type VerifyOptions struct {
+	Digest []byte
+	Hash   crypto.Hash
+
+	Keys KeyPool
+}
+
+var (
+	UnknownSigner error = fmt.Errorf("ima: unknown signature keyid")
+)
+
+func (s Signature) Verify(opts VerifyOptions) (crypto.PublicKey, error) {
+	candidates := opts.Keys.Get(s.Header.KeyID)
+	if len(candidates) == 0 {
+		return nil, UnknownSigner
+	}
+	var err error
+	for _, el := range candidates {
+		if err = s.VerifyKey(el, opts.Digest, opts.Hash); err == nil {
+			return el, nil
+		}
+	}
+	return nil, err
+}
+
+func (s Signature) VerifyKey(pub crypto.PublicKey, digest []byte, hash crypto.Hash) error {
 	switch pub.(type) {
 	case rsa.PublicKey:
 		pubRSA := pub.(rsa.PublicKey)

@@ -25,9 +25,14 @@ import (
 )
 
 var (
+	// Files attribute to read and write IMA signatures to.
 	IMAAttrName string = "security.ima"
 )
 
+// Load the ima signature from the filesystem xattr, and parse the Signature
+// into an ima.Signature block.
+//
+// If the attribute doesn't exist, golang/x/sys/unix.ENODATA will be returned.
 func Parse(fd *os.File) (*ima.Signature, error) {
 	data := make([]byte, 1024)
 	size, err := unix.Getxattr(fd.Name(), IMAAttrName, data)
@@ -37,6 +42,14 @@ func Parse(fd *os.File) (*ima.Signature, error) {
 	return ima.Parse(data[:size])
 }
 
+// Load the ima signature from the filesystem xattr, and measure the file's
+// current digest against the signature's digest. If that's valid, the signature
+// will be checked against all keys in the KeyPool that have the same Key ID,
+// and will either return nil for a valid signature from one of the keys, or
+// the last error for the last key tried.
+//
+// This code expects the file is seek'd to the origin of the file, and will return
+// the file at its EOF.
 func Verify(fd *os.File, pool ima.KeyPool) error {
 	sig, err := Parse(fd)
 	if err != nil {
@@ -60,6 +73,12 @@ func Verify(fd *os.File, pool ima.KeyPool) error {
 	return err
 }
 
+// Measure the file, and sign the digest with the provided signer. The entropy
+// source and signer options will be passed directly back into the underlying
+// Signature call.
+//
+// This code expects the file is seek'd to the origin of the file, and will return
+// the file at its EOF.
 func Sign(signer crypto.Signer, rand io.Reader, opts crypto.SignerOpts, fd *os.File) error {
 	hash := opts.HashFunc().New()
 	if _, err := io.Copy(hash, fd); err != nil {

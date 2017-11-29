@@ -54,17 +54,38 @@ func Sign(signer crypto.Signer, rand io.Reader, digest []byte, opts crypto.Signe
 	return Serialize(ret)
 }
 
+// Options to handle the validation of a Signature.
 type VerifyOptions struct {
+	// Digest of the object to be verified that the caller has computed themselves.
 	Digest []byte
-	Hash   crypto.Hash
 
+	// Hash algorithm used to measure the file. If this is not the same as
+	// the Signature's algorithm, Verify will fail to validate the Signature,
+	// even though the file may match. When measuring a file, it's best to
+	// load the Signature, and pull the Hash algorithm from the
+	// `Signature.Header.Hash()` function call.
+	Hash crypto.Hash
+
+	// Keyring to validate Signatures against.
 	Keys KeyPool
 }
 
 var (
+	// This is returned when the KeyPool does not have the KeyId in the
+	// keychain, which means there's absolutely no way we have a valid
+	// Signature, since we absolutely don't have the public key.
 	UnknownSigner error = fmt.Errorf("ima: unknown signature keyid")
 )
 
+// Verify the Signature with the provided VerifyOptions.
+//
+// If the KeyId is unknown to the underlying KeyPool, this will return
+// UnknownSigner.
+//
+// This function will attempt to verify the signature using each of the
+// Public keys with a matching KeyId in the order they were added to the
+// Pool. When a Signature matches, the Public Key will be returned.
+// If not, the error from the last validation attempt will be returned.
 func (s Signature) Verify(opts VerifyOptions) (crypto.PublicKey, error) {
 	candidates := opts.Keys.Get(s.Header.KeyID)
 	if len(candidates) == 0 {
@@ -79,6 +100,13 @@ func (s Signature) Verify(opts VerifyOptions) (crypto.PublicKey, error) {
 	return nil, err
 }
 
+// Verify the Signature against the digest matches both our digest and hash
+// algorithm for a specific key.
+//
+// At this time, only RSA Public Keys are supported due to IMA only supporting
+// RSA signatures.
+//
+// Any PublicKey struct except an rsa.PublicKey will return an opaque error.
 func (s Signature) VerifyKey(pub crypto.PublicKey, digest []byte, hash crypto.Hash) error {
 	switch pub.(type) {
 	case rsa.PublicKey:

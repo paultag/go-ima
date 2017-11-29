@@ -19,14 +19,20 @@ import (
 	"fmt"
 )
 
+// Initialize a KeyPool
 func NewKeyPool() KeyPool {
 	return KeyPool{pool: map[string][]crypto.PublicKey{}}
 }
 
+// KeyPool is a keyring of crypto.PublicKeys. Internally, this uses the
+// PublicKeyId to serve not unlike a bloom filter for key selection, which
+// allows the Verify function to only try keys which have matching Key IDs.
 type KeyPool struct {
 	pool map[string][]crypto.PublicKey
 }
 
+// Cheeck to see if the crypto.PublicKey's PublicKeyId is set in the underlying
+// storage, and if that key might already be included.
 func (k KeyPool) MaybeContains(key crypto.PublicKey) bool {
 	id, err := PublicKeyId(key)
 	if err != nil {
@@ -37,11 +43,13 @@ func (k KeyPool) MaybeContains(key crypto.PublicKey) bool {
 	return ok
 }
 
+// Get all matching keys by the KeyId.
 func (k KeyPool) Get(id [4]byte) []crypto.PublicKey {
 	idk := fmt.Sprintf("%x", id)
 	return k.pool[idk]
 }
 
+// Add a new crypto.PublicKey to the keychain.
 func (k KeyPool) AddKey(key crypto.PublicKey) error {
 	id, err := PublicKeyId(key)
 	if err != nil {

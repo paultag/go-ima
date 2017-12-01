@@ -88,7 +88,7 @@ func main() {
 	app.Usage = "sign and validate ima signatures"
 	app.Version = "0.1"
 
-	xattr.IMAAttrName = "user.ima"
+	// xattr.IMAAttrName = "user.ima"
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{

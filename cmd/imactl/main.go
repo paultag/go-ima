@@ -25,7 +25,6 @@ import (
 	"github.com/urfave/cli"
 
 	"pault.ag/go/ima"
-	"pault.ag/go/ima/xattr"
 )
 
 func LoadPool(c *cli.Context) (*ima.KeyPool, error) {

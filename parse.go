@@ -96,6 +96,17 @@ type SignatureHeader struct {
 	SignatureLength uint16
 }
 
+// Output an IMA signature in a human readable format, for debugging.
+func (s SignatureHeader) String() string {
+	return fmt.Sprintf(
+		"version=%x, hashAlgorithm=%x, keyID=%x, signatureLen=%d",
+		s.Version,
+		s.HashAlgorithm,
+		s.KeyID,
+		s.SignatureLength,
+	)
+}
+
 // Get the native Go crypto.Hash used to compute the Hash that that signature
 // is over. This can be used to hash data to generate the data to verify
 // the signature against.
